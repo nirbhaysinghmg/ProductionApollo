@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Location Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .location-info {
+            background: #f0f8ff;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <h1>Location Recognition Test</h1>
+    
+    <div class="test-section">
+        <h2>Location Detection</h2>
+        <button onclick="testLocation()">Get My Location</button>
+        <div id="location-result" class="location-info" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Session ID Generation</h2>
+        <button onclick="testSessionId()">Generate Session ID</button>
+        <div id="session-result" class="location-info" style="display: none;"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>LocalStorage Test</h2>
+        <button onclick="testLocalStorage()">Test LocalStorage</button>
+        <div id="storage-result" class="location-info" style="display: none;"></div>
+    </div>
+
+    <script>
+        // Test location detection
+        function testLocation() {
+            const resultDiv = document.getElementById('location-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = 'Getting location...';
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const location = {
+                            latitude: position.coords.latitude,
+                            longitude: position.coords.longitude,
+                            accuracy: position.coords.accuracy,
+                            timestamp: position.timestamp
+                        };
+                        resultDiv.innerHTML = `
+                            <strong>Location obtained:</strong><br>
+                            Latitude: ${location.latitude}<br>
+                            Longitude: ${location.longitude}<br>
+                            Accuracy: ${location.accuracy} meters<br>
+                            Timestamp: ${new Date(location.timestamp).toLocaleString()}
+                        `;
+                    },
+                    (error) => {
+                        resultDiv.innerHTML = `
+                            <strong>Location error:</strong><br>
+                            ${error.message}<br>
+                            Code: ${error.code}
+                        `;
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 300000
+                    }
+                );
+            } else {
+                resultDiv.innerHTML = '<strong>Geolocation not supported</strong>';
+            }
+        }
+
+        // Test session ID generation
+        function testSessionId() {
+            const resultDiv = document.getElementById('session-result');
+            resultDiv.style.display = 'block';
+
+            // Simulate location data
+            const mockLocation = {
+                latitude: 12.9716,
+                longitude: 77.5946,
+                accuracy: 10,
+                timestamp: Date.now()
+            };
+
+            function generateLocationSessionId(location) {
+                if (location.latitude && location.longitude) {
+                    const lat = Math.round(location.latitude * 10000) / 10000;
+                    const lng = Math.round(location.longitude * 10000) / 10000;
+                    const timestamp = Math.floor(Date.now() / 60000);
+                    return `session_${lat}_${lng}_${timestamp}`;
+                } else {
+                    return `session_${Date.now()}`;
+                }
+            }
+
+            const sessionId = generateLocationSessionId(mockLocation);
+            resultDiv.innerHTML = `
+                <strong>Generated Session ID:</strong><br>
+                ${sessionId}<br><br>
+                <strong>Mock Location:</strong><br>
+                Lat: ${mockLocation.latitude}, Lng: ${mockLocation.longitude}
+            `;
+        }
+
+        // Test localStorage
+        function testLocalStorage() {
+            const resultDiv = document.getElementById('storage-result');
+            resultDiv.style.display = 'block';
+
+            // Test storing and retrieving location data
+            const testLocation = {
+                latitude: 12.9716,
+                longitude: 77.5946,
+                accuracy: 10,
+                timestamp: Date.now()
+            };
+
+            localStorage.setItem('test_location', JSON.stringify(testLocation));
+            const retrieved = JSON.parse(localStorage.getItem('test_location'));
+
+            resultDiv.innerHTML = `
+                <strong>LocalStorage Test:</strong><br>
+                Stored: ${JSON.stringify(testLocation)}<br>
+                Retrieved: ${JSON.stringify(retrieved)}<br>
+                Match: ${JSON.stringify(testLocation) === JSON.stringify(retrieved)}
+            `;
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,14 @@
+[Unit]
+Description=Chatbot Backend Service
+After=network.target
+
+[Service]
+User=nirbhay
+WorkingDirectory=/home/nirbhay/apolotyreaibot
+ExecStart=/usr/bin/python3 /home/nirbhay/apolotyreaibot/app.py
+Restart=always
+KillSignal=SIGINT
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

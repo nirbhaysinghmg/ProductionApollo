@@ -1,0 +1,120 @@
+node_modules
+.env
+chroma_db
+.venv311
+.qodo
+.vs
+
+crawlers
+data
+
+# Logs and outputs
+*.log
+nohup.out
+*.out
+*.log.*
+
+# Backups and temporary directories
+backup/
+backup_*/
+*_backup/
+temp/
+tmp/
+
+# Database files
+chroma_db/
+chroma_db2/
+chroma_tyres_db/
+bm25_index/
+
+# Python cache and virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv*/
+venv/
+env/
+ENV/
+
+# Environment and configuration files
+.env
+.env.local
+.env.production
+.env.staging
+*.env
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build and distribution
+build/
+dist/
+*.egg-info/
+*.egg
+
+# SSL certificates (if you have them)
+ssl/
+*.pem
+*.key
+*.crt
+
+# Large data files
+*.csv
+*.jsonl
+*.db
+*.sqlite
+*.sqlite3
+
+# Specific to your project
+realtyseek.log
+agent.log
+*.log
+nohup.out
+backup/
+
+
+# Existing content
+node_modules
+.env
+chroma_db
+.venv311
+.qodo
+.vs
+
+crawlers
+data
+
+# Specific sensitive files and directories that caused GitHub push rejection
+apollo_ai_agent_13082025/
+apollo_ai_agent_13082025/backup/
+apollo_ai_agent_13082025/backup/realtyseek.log
+apollo_ai_agent_13082025/nohup.out
+
+# General patterns to prevent similar issues
+*_13082025/
+*_backup/
+backup/
+*.log
+nohup.out
+*.out
+
+# Additional sensitive patterns
+**/backup/
+**/*.log
+**/nohup.out
+**/*.out

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chatbot</title>
+  </head>
+  <body>
+    <!-- Add inside <body> of your HTML -->
+    <div id="chatbot" style="display: none"></div>
+    <div
+      id="elan-ai-button"
+      onclick="openChatbot()"
+      style="
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: linear-gradient(135deg, #004aad 0%, #0066cc 100%);
+        color: white;
+        font-weight: 600;
+        padding: 14px 24px;
+        border-radius: 30px;
+        box-shadow: 0 4px 15px rgba(0, 74, 173, 0.35);
+        cursor: pointer;
+        font-size: 16px;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        letter-spacing: 0.2px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+      "
+    >
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="22"
+        height="22"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        style="min-width: 22px"
+      >
+        <path
+          d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+        ></path>
+      </svg>
+      <span>Need Help? Apolo AI Agent Is Here!</span>
+    </div>
+
+    <style>
+      #elan-ai-button:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba(0, 74, 173, 0.45);
+        background: linear-gradient(135deg, #0052c2 0%, #0074e8 100%);
+      }
+
+      #elan-ai-button:active {
+        transform: translateY(0);
+        box-shadow: 0 3px 10px rgba(0, 74, 173, 0.3);
+      }
+
+      @media (max-width: 768px) {
+        #elan-ai-button {
+          padding: 12px 20px;
+          font-size: 14px;
+          bottom: 15px;
+          right: 15px;
+        }
+
+        #elan-ai-button span {
+          display: none;
+        }
+
+        #elan-ai-button svg {
+          margin: 0;
+        }
+      }
+
+      /* Add styles for the chatbot logo */
+      #chatbot .chat-logo {
+        width: 40px;
+        height: 40px;
+        object-fit: contain;
+        border-radius: 8px;
+        background: white;
+        padding: 4px;
+      }
+    </style>
+
+    <!-- Load Chatbot Script -->
+    <script src="https://150.241.244.252:3006/dist/chatbot-widget.js"></script>
+
+    <script>
+      // Location recognition and session management
+      let userLocation = null;
+      let locationSessionId = null;
+
+      // Function to get user's location
+      function getUserLocation() {
+        return new Promise((resolve, reject) => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              (position) => {
+                const location = {
+                  latitude: position.coords.latitude,
+                  longitude: position.coords.longitude,
+                  accuracy: position.coords.accuracy,
+                  timestamp: position.timestamp
+                };
+                console.log('Location obtained:', location);
+                resolve(location);
+              },
+              (error) => {
+                console.log('Location access denied or error:', error);
+                // Fallback to IP-based location or default
+                resolve({
+                  latitude: null,
+                  longitude: null,
+                  accuracy: null,
+                  timestamp: Date.now(),
+                  error: error.message
+                });
+              },
+              {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 300000 // 5 minutes
+              }
+            );
+          } else {
+            console.log('Geolocation not supported');
+            resolve({
+              latitude: null,
+              longitude: null,
+              accuracy: null,
+              timestamp: Date.now(),
+              error: 'Geolocation not supported'
+            });
+          }
+        });
+      }
+
+      // Function to generate location-based session ID
+      function generateLocationSessionId(location) {
+        if (location.latitude && location.longitude) {
+          // Create a session ID based on location coordinates (rounded to 4 decimal places)
+          const lat = Math.round(location.latitude * 10000) / 10000;
+          const lng = Math.round(location.longitude * 10000) / 10000;
+          const timestamp = Math.floor(Date.now() / 60000); // Round to nearest minute
+          return `session_${lat}_${lng}_${timestamp}`;
+        } else {
+          // Fallback to time-based session ID
+          return `session_${Date.now()}`;
+        }
+      }
+
+      // Function to initialize location and session
+      async function initializeLocationSession() {
+        try {
+          userLocation = await getUserLocation();
+          locationSessionId = generateLocationSessionId(userLocation);
+          
+          // Store location and session ID in localStorage
+          localStorage.setItem('user_location', JSON.stringify(userLocation));
+          localStorage.setItem('location_session_id', locationSessionId);
+          
+          console.log('Location session initialized:', {
+            location: userLocation,
+            sessionId: locationSessionId
+          });
+          
+          return { location: userLocation, sessionId: locationSessionId };
+        } catch (error) {
+          console.error('Error initializing location session:', error);
+          return { location: null, sessionId: `session_${Date.now()}` };
+        }
+      }
+
+      // Function to clear location session history
+      function clearLocationSessionHistory() {
+        localStorage.removeItem('user_location');
+        localStorage.removeItem('location_session_id');
+        localStorage.removeItem('healthcare_session_id');
+        
+        // Also clear any chat history stored in localStorage
+        const keysToRemove = [];
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.includes('chat_history') || key.includes('session'))) {
+            keysToRemove.push(key);
+          }
+        }
+        keysToRemove.forEach(key => localStorage.removeItem(key));
+        
+        console.log('Location session history cleared');
+      }
+
+      // Function to handle session end
+      function handleSessionEnd() {
+        // Send user left event to backend
+        const userId = localStorage.getItem("healthcare_user_id") || "";
+        const sessionId = localStorage.getItem("healthcare_session_id") || "";
+        
+        if (userId && sessionId) {
+          // Send user left event via fetch (more reliable than WebSocket on page unload)
+          fetch('https://150.241.244.252:9006/analytics/user_left', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              session_id: sessionId,
+              reason: 'page_closed',
+              timestamp: new Date().toISOString()
+            })
+          }).catch(error => {
+            console.log('Failed to send user left event:', error);
+          });
+        }
+        
+        clearLocationSessionHistory();
+        console.log('Session ended, history cleared');
+      }
+
+      // Listen for page unload to clear session
+      window.addEventListener('beforeunload', handleSessionEnd);
+      window.addEventListener('pagehide', handleSessionEnd);
+      window.addEventListener('unload', handleSessionEnd);
+      
+      // Listen for visibility changes (tab switching, minimizing)
+      document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+          // User switched tabs or minimized browser
+          const userId = localStorage.getItem("healthcare_user_id") || "";
+          const sessionId = localStorage.getItem("healthcare_session_id") || "";
+          
+          if (userId && sessionId) {
+            fetch('https://150.241.244.252:9006/analytics/user_left', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                user_id: userId,
+                session_id: sessionId,
+                reason: 'tab_switched',
+                timestamp: new Date().toISOString()
+              })
+            }).catch(error => {
+              console.log('Failed to send tab switch event:', error);
+            });
+          }
+        }
+      });
+
+      // Initialize location session when page loads
+      document.addEventListener('DOMContentLoaded', async () => {
+        // Set session start time
+        window.sessionStartTime = Date.now();
+        await initializeLocationSession();
+      });
+      // Define openChatbot function
+      function openChatbot() {
+        const chatbot = document.getElementById("chatbot");
+        const button = document.getElementById("elan-ai-button");
+        if (chatbot) {
+          chatbot.style.display = "block";
+          // Hide the button when chatbot is opened
+          if (button) {
+            button.style.display = "none";
+          } 
+        }
+      }
+
+      // Define closeChatbot function
+      function closeChatbot() {
+        const chatbot = document.getElementById("chatbot");
+        const button = document.getElementById("elan-ai-button");
+        if (chatbot) {
+          chatbot.style.display = "none";
+          // Show the button when chatbot is closed
+          if (button) {
+            button.style.display = "flex";
+          }
+        }
+      }
+
+      // Initialize Chatbot with location-based session
+      if (window.ChatBotWidget?.init) {
+        ChatBotWidget.init({
+          container: "#chatbot",
+          baseUrl: "https://chat.realtyseek.ai",
+          companyName: "Apollo Tyres",
+          companyLogo:
+            "assets/images/apollo-tyres-logo-png_seeklogo-314374.png",
+          primaryColor: "#004aad",
+          placeholder: "Ask about tyres, services, or support...",
+          showButton: false,
+          locationSessionId: locationSessionId, // Pass location session ID
+          userLocation: userLocation, // Pass user location
+          onInit: () => {
+            const observer = new MutationObserver(() => {
+              const header = document.querySelector(".chat-header");
+              if (header && !header.querySelector(".close-button")) {
+                const btn = document.createElement("button");
+                btn.className = "close-button";
+                btn.innerHTML = "&times;";
+                btn.onclick = () => {
+                  closeChatbot();
+                  // Clear session history when chatbot is closed
+                  clearLocationSessionHistory();
+                };
+                Object.assign(btn.style, {
+                  position: "absolute",
+                  top: "12px",
+                  right: "14px",
+                  fontSize: "22px",
+                  background: "transparent",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "#444",
+                });
+                header.appendChild(btn);
+                observer.disconnect();
+              }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+          },
+          onSessionEnd: () => {
+            // Clear session history when session ends
+            clearLocationSessionHistory();
+          }
+        });
+      }
+    </script>
+  </body>
+</html>
