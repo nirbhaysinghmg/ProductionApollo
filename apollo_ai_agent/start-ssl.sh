@@ -42,3 +42,4 @@ echo "To stop the server, run: ./stop.sh"
 echo "To view logs: tail -f $LOG_FILE"
 
 
+

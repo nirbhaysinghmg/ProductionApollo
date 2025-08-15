@@ -77,17 +77,12 @@ app.add_middleware(
 @app.websocket("/ws/chat")
 async def websocket_endpoint(websocket: WebSocket):
     logger.info(f"🔌 WebSocket connection attempt from: {websocket.client.host}:{websocket.client.port}")
-    # Ensure only one accept per connection
-    if websocket.client_state.value == "connected":
-        logger.warning(f"WebSocket already accepted for: {websocket.client.host}:{websocket.client.port}")
-        await websocket.close(code=1000, reason="Duplicate connection attempt")
-        return
     try:
         await websocket.accept()
         logger.info(f"✅ WebSocket connection accepted from: {websocket.client.host}:{websocket.client.port}")
         await chat_endpoint(websocket)  # Call the chat handler
     except Exception as e:
-        error_logger.error(f"❌ WebSocket error: {e}")
+        error_logger.error(f"❌ WebSocket error: {e}", exc_info=True)
         if websocket.client_state.value != "disconnected":
             await websocket.close(code=1000, reason="Internal error")
     finally:
